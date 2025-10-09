@@ -1,7 +1,8 @@
 import axios from "axios";
 
+// Use the live backend URL from Render
 export const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://secure-msg-transfer.onrender.com/api",
 });
 
 export const setAuthToken = (token) => {
