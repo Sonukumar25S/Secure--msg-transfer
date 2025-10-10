@@ -14,11 +14,16 @@ app.use(express.json());
 
 // CORS: allow only frontend URL in production
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-app.use(
-    cors({ 
-        origin: FRONTEND_URL,
-    credentials:true,
- }));
+
+app.use(cors({
+  origin: FRONTEND_URL,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
+// Handle preflight requests
+app.options("*", cors());
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
