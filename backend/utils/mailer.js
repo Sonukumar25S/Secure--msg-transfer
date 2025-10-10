@@ -1,27 +1,28 @@
-const nodemailer = require('nodemailer');
-
-async function createTransport() {
-  // Use SMTP provider credentials in .env
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-}
+// backend/utils/mailer.js
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 async function sendVerificationEmail(toEmail, token) {
-  const transport = await createTransport();
-  const link = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
-  await transport.sendMail({
-    from: process.env.SMTP_FROM,
+  const link = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+
+  const msg = {
     to: toEmail,
-    subject: 'Verify your email',
-    html: `<p>Please verify your email by clicking <a href="${link}">this link</a></p>`
-  });
+    from: process.env.SMTP_FROM, // verified sender in SendGrid
+    subject: "Verify your Secure Transfer account",
+    text: `Please verify your email: ${link}`,
+    html: `<p>Please verify your email by clicking <a href="${link}">this link</a>.</p>
+           <p>If the link doesn't work, copy and paste this URL into your browser:</p>
+           <p>${link}</p>`
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log("✅ Verification email sent to", toEmail);
+  } catch (err) {
+    // Log SendGrid response for debugging (do NOT expose to clients)
+    console.error("SendGrid error:", err?.response?.body || err);
+    throw err; // rethrow so caller (signup route) can handle/log it
+  }
 }
 
 module.exports = { sendVerificationEmail };
