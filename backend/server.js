@@ -13,17 +13,27 @@ const app = express();
 app.use(express.json());
 
 // CORS: allow only frontend URL in production
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigins = [
+  "https://secure-msg-transfer.vercel.app",  // production
+  "https://secure-msg-transfer-hvuo798ag-sonu-kumars-projects-9b877e42.vercel.app" // preview
+];
 
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests like Postman
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
 
-// Handle preflight requests
 app.options("*", cors());
+
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
