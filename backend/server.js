@@ -13,10 +13,6 @@ const app = express();
 app.use(express.json());
 
 // CORS: allow only frontend URL in production
-const allowedOrigins = [
-  "https://secure-msg-transfer.vercel.app",  // production
-  "https://secure-msg-transfer-hvuo798ag-sonu-kumars-projects-9b877e42.vercel.app" // preview
-];
 
 const allowedOrigins = [
   "https://secure-msg-transfer.vercel.app",
