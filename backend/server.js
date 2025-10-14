@@ -38,8 +38,16 @@ app.options("*", cors());
 
 
 
+const fs = require("fs");
+
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+  console.log("📁 uploads folder created at startup");
+}
+
 // Serve uploaded files statically
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(uploadDir));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));

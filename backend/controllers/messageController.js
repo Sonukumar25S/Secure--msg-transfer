@@ -8,21 +8,19 @@ const cryptoUtils = require("../utils/crypto");
 exports.sendMessage = async (req, res) => {
   try {
     const { receiverEmail, encryptedAESKey, payload } = req.body;
-    const file = req.file; // optional file from multer
-
-    console.log("📩 Received message:", {
-      receiverEmail,
-      hasFile: !!file,
-      encryptedAESKey: !!encryptedAESKey,
-    });
+    const file = req.file;
 
     const senderId = req.user.id;
     const receiver = await User.findOne({ email: receiverEmail });
     if (!receiver) return res.status(404).json({ message: "Receiver not found" });
 
-    // File info (if any)
     let fileInfo = null;
     if (file) {
+      if (!fs.existsSync(file.path)) {
+        console.error("🚫 File upload failed - file missing after multer");
+        return res.status(500).json({ message: "File upload failed. Try again." });
+      }
+
       fileInfo = {
         filename: file.filename,
         originalname: file.originalname,
@@ -32,7 +30,6 @@ exports.sendMessage = async (req, res) => {
       };
     }
 
-    // Save message
     const message = new Message({
       sender: senderId,
       receiver: receiver._id,
@@ -43,12 +40,13 @@ exports.sendMessage = async (req, res) => {
 
     await message.save();
     console.log("✅ Message saved successfully");
-    return res.json({ message: "Message sent successfully" });
+    res.json({ message: "Message sent successfully" });
   } catch (err) {
     console.error("❌ Send message error:", err);
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // 📥 Get all messages for logged-in user (Inbox)
 exports.getInbox = async (req, res) => {
