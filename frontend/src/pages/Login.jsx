@@ -31,7 +31,8 @@ export default function Login({ onLogin }) {
 
         // In your current backend, the private key is only Base64-encoded (not AES-encrypted)
         // So we can directly decode it for now.
-        const decryptedPrivateKey = atob(data);
+       const decryptedPrivateKey = Buffer.from(data, "base64").toString("utf-8");
+
 
         // ✅ Step 2: Save keys to localStorage
         localStorage.setItem("privateKey", decryptedPrivateKey);
