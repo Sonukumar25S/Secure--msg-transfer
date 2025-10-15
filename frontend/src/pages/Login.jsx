@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { api, setAuthToken } from "../api/api";
 import { useNavigate } from "react-router-dom";
-import crypto from "crypto-js";
 
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -14,38 +13,27 @@ export default function Login({ onLogin }) {
       const res = await api.post("/auth/login", form);
       const { token, user } = res.data;
 
-      // Store token and user
+      // ✅ Store auth + keys
       setAuthToken(token);
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ Step 1: Decrypt Base64-encoded private key
-      if (user.rsaPrivateKeyEncrypted) {
-  const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
+      // ✅ Save decrypted RSA keys (now sent from backend)
+      if (user.rsaPrivateKey && user.rsaPublicKey) {
+        localStorage.setItem("privateKey", user.rsaPrivateKey);
+        localStorage.setItem("publicKey", user.rsaPublicKey);
 
-  // Decode Base64
-  let decoded = atob(data);
+        console.log("✅ Private key valid start:", user.rsaPrivateKey.startsWith("-----BEGIN"));
+        console.log("✅ Private key valid end:", user.rsaPrivateKey.endsWith("-----END RSA PRIVATE KEY-----"));
+      } else {
+        console.warn("⚠️ No RSA keys found in response");
+      }
 
-  // Ensure correct PEM format with line breaks
-  if (!decoded.includes("-----BEGIN")) {
-    decoded = decoded
-      .replace(/(.{64})/g, "$1\n") // insert newline every 64 chars
-      .trim();
-    decoded = "-----BEGIN RSA PRIVATE KEY-----\n" + decoded + "\n-----END RSA PRIVATE KEY-----";
-  }
-
-  localStorage.setItem("privateKey", decoded);
-  localStorage.setItem("publicKey", user.rsaPublicKey);
-
-  console.log("Private key PEM valid start:", decoded.startsWith("-----BEGIN RSA PRIVATE KEY-----"));
-  console.log("Private key PEM valid end:", decoded.endsWith("-----END RSA PRIVATE KEY-----"));
-}
-
-
+      // ✅ Continue
       onLogin(user);
       navigate("/inbox");
     } catch (e) {
-      console.error("Login error:", e);
+      console.error(e);
       setErr(e?.response?.data?.message || "Login failed.");
     }
   }

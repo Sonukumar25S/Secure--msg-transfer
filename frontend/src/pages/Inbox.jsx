@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/api";
-import  { JSEncrypt }from  "jsencrypt";
+import { JSEncrypt } from "jsencrypt";
 import { aesDecryptBase64WithKeyHex } from "../utils/cryptoClient";
 
 export default function Inbox({ user }) {
@@ -27,32 +27,34 @@ export default function Inbox({ user }) {
 
   async function handleView(msg) {
     try {
-      
-      const privateKey = localStorage.getItem("privateKey")?.trim();
-if (!privateKey) throw new Error("Private key missing");
+      const privateKey = localStorage.getItem("privateKey");
+      if (!privateKey) throw new Error("Private key not found");
 
-const encryptedAESKey = msg.encryptedAESKey?.trim();
-if (!encryptedAESKey) throw new Error("No AES key");
+      // ✅ RSA decrypt the AES key
+      const jse = new JSEncrypt();
+      jse.setPrivateKey(privateKey);
 
-const jse = new JSEncrypt();
-jse.setPrivateKey(privateKey);
+      const encryptedAESKey = msg.encryptedAESKey?.trim();
+      if (!encryptedAESKey) throw new Error("No AES key found in message");
 
-const aesKeyHex = jse.decrypt(encryptedAESKey);
-if (!aesKeyHex) {
-    console.error("Private key:", privateKey);
-    console.error("Encrypted AES key:", encryptedAESKey);
-    throw new Error("AES key decryption failed");
-}
+      console.log("🔐 Encrypted AES key:", encryptedAESKey);
 
+      const aesKeyHex = jse.decrypt(encryptedAESKey);
+      if (!aesKeyHex) {
+        console.error("❌ Failed RSA decrypt. Maybe wrong key or corrupted data.");
+        throw new Error("Failed to decrypt AES key");
+      }
 
-    
+      console.log("✅ AES key decrypted:", aesKeyHex);
+
+      // ✅ AES decrypt message payload
       const payloadObj = JSON.parse(msg.payload);
       const decryptedText = await aesDecryptBase64WithKeyHex(payloadObj, aesKeyHex);
 
-      alert(`📨 Message:\n${decryptedText}`);
+      alert(`📨 Message:\n\n${decryptedText}`);
     } catch (err) {
-      console.error("Error decrypting:", err);
-      alert("❌ Failed to decrypt message. Check console.");
+      console.error("Error decrypting message:", err);
+      alert("❌ Failed to decrypt message. See console for details.");
     }
   }
 
@@ -82,7 +84,7 @@ if (!aesKeyHex) {
 
     try {
       await api.delete(`/message/delete/${msgId}`);
-      setMessages(prev => prev.filter(m => m._id !== msgId));
+      setMessages((prev) => prev.filter((m) => m._id !== msgId));
       alert("Message deleted successfully.");
     } catch (err) {
       console.error("Delete message error:", err);
@@ -98,9 +100,11 @@ if (!aesKeyHex) {
       {messages.length === 0 ? (
         <p className="text-gray-500">No messages found.</p>
       ) : (
-        messages.map(msg => (
+        messages.map((msg) => (
           <div key={msg._id} className="border-b border-gray-300 py-3 flex flex-col gap-2">
-            <p><strong>From:</strong> {msg.sender?.email}</p>
+            <p>
+              <strong>From:</strong> {msg.sender?.email}
+            </p>
 
             <button
               onClick={() => handleView(msg)}
