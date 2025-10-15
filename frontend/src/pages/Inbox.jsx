@@ -27,13 +27,15 @@ export default function Inbox({ user }) {
 
   async function handleView(msg) {
     try {
-      const privateKey = localStorage.getItem("privateKey");
+      let privateKey = localStorage.getItem("privateKey");
       if (!privateKey) throw new Error("Private key not found");
+
+      // Normalize escaped \n → real newlines
+      privateKey = privateKey.replace(/\\n/g, "\n").trim();
 
       const jse = new JSEncrypt();
       jse.setPrivateKey(privateKey);
 
-      // Make sure AES key is a string
       const encryptedAESKey = msg.encryptedAESKey?.trim();
       if (!encryptedAESKey) throw new Error("No AES key found");
 

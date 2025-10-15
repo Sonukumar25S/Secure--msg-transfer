@@ -19,16 +19,23 @@ export default function Login({ onLogin }) {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // Decrypt Base64-encoded private key
+      // ✅ Step 1: Decrypt Base64-encoded private key
       if (user.rsaPrivateKeyEncrypted) {
         const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
 
         // Decode Base64 → string
         let decryptedPrivateKey = atob(data);
+
+        // Replace escaped \n with real newlines
         decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n").trim();
 
+        // Save to localStorage
         localStorage.setItem("privateKey", decryptedPrivateKey);
         localStorage.setItem("publicKey", user.rsaPublicKey);
+
+        // Debug logs
+        console.log("✅ Private key valid start:", decryptedPrivateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----"));
+        console.log("✅ Private key valid end:", decryptedPrivateKey.endsWith("-----END RSA PRIVATE KEY-----"));
       }
 
       onLogin(user);
