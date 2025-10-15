@@ -21,32 +21,26 @@ export default function Login({ onLogin }) {
 
       // ✅ Step 1: Decrypt Base64-encoded private key
       if (user.rsaPrivateKeyEncrypted) {
-        const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
+  const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
 
-        // Decode Base64 → string
-        let privateKey = atob(data);
+  // Decode Base64
+  let decoded = atob(data);
 
-        // Fix line breaks if necessary
-        if (!privateKey.includes("-----BEGIN RSA PRIVATE KEY-----")) {
-          privateKey = privateKey.replace(/\\n/g, "\n");
-        }
+  // Ensure correct PEM format with line breaks
+  if (!decoded.includes("-----BEGIN")) {
+    decoded = decoded
+      .replace(/(.{64})/g, "$1\n") // insert newline every 64 chars
+      .trim();
+    decoded = "-----BEGIN RSA PRIVATE KEY-----\n" + decoded + "\n-----END RSA PRIVATE KEY-----";
+  }
 
-        privateKey = privateKey.trim();
+  localStorage.setItem("privateKey", decoded);
+  localStorage.setItem("publicKey", user.rsaPublicKey);
 
-        // ✅ Step 2: Save keys to localStorage
-        localStorage.setItem("privateKey", privateKey);
-        localStorage.setItem("publicKey", user.rsaPublicKey);
+  console.log("Private key PEM valid start:", decoded.startsWith("-----BEGIN RSA PRIVATE KEY-----"));
+  console.log("Private key PEM valid end:", decoded.endsWith("-----END RSA PRIVATE KEY-----"));
+}
 
-        // 🔹 Optional: Verify immediately
-        console.log(
-          "Private key valid start:",
-          privateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----")
-        );
-        console.log(
-          "Private key valid end:",
-          privateKey.endsWith("-----END RSA PRIVATE KEY-----")
-        );
-      }
 
       onLogin(user);
       navigate("/inbox");
