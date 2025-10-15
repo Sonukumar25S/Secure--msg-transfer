@@ -107,6 +107,19 @@ exports.login = async (req, res) => {
     if (!user.isVerified)
       return res.status(403).json({ message: "Please verify your email first." });
 
+    // 🔓 Decrypt private key
+    const { iv, data, salt } = JSON.parse(user.rsaPrivateKeyEncrypted);
+
+    const derivedKey = crypto.scryptSync(password, salt, 32);
+    const decipher = crypto.createDecipheriv("aes-256-cbc", derivedKey, Buffer.from(iv, "hex"));
+
+    let decrypted = decipher.update(data, "base64", "utf8");
+    decrypted += decipher.final("utf8");
+
+    // 🔍 Validation check
+    console.log("Private key valid start:", decrypted.startsWith("-----BEGIN"));
+    console.log("Private key valid end:", decrypted.endsWith("-----END RSA PRIVATE KEY-----"));
+
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
@@ -120,7 +133,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         rsaPublicKey: user.rsaPublicKey,
-        rsaPrivateKeyEncrypted: user.rsaPrivateKeyEncrypted,
+        rsaPrivateKey: decrypted, // ✅ decrypted PEM text
       },
     });
   } catch (err) {
@@ -128,6 +141,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 /**
  * 🟢 GET PUBLIC KEY (for sending encrypted messages)
