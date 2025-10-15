@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import { api, setAuthToken } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import crypto from "crypto-js";
+import { Buffer } from "buffer";
+
+
+window.Buffer = Buffer;
+
 
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: "", password: "" });
