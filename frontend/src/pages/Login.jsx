@@ -36,7 +36,8 @@ export default function Login({ onLogin }) {
 
         // In your current backend, the private key is only Base64-encoded (not AES-encrypted)
         // So we can directly decode it for now.
-       let decryptedPrivateKey = Buffer.from(data, "base64").toString("utf-8");
+let decryptedPrivateKey = atob(data);                  // decode Base64
+decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n").trim();
 
        decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n");
         // ✅ Step 2: Save keys to localStorage
