@@ -38,7 +38,7 @@ export default function Login({ onLogin }) {
         // So we can directly decode it for now.
        const decryptedPrivateKey = Buffer.from(data, "base64").toString("utf-8");
 
-
+       decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n");
         // ✅ Step 2: Save keys to localStorage
         localStorage.setItem("privateKey", decryptedPrivateKey);
         localStorage.setItem("publicKey", user.rsaPublicKey);
