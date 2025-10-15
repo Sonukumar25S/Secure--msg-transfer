@@ -2,11 +2,6 @@ import React, { useState } from "react";
 import { api, setAuthToken } from "../api/api";
 import { useNavigate } from "react-router-dom";
 import crypto from "crypto-js";
-import { Buffer } from "buffer";
-
-
-window.Buffer = Buffer;
-
 
 export default function Login({ onLogin }) {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -24,23 +19,14 @@ export default function Login({ onLogin }) {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ Step 1: Decrypt private key from user.rsaPrivateKeyEncrypted
+      // Decrypt Base64-encoded private key
       if (user.rsaPrivateKeyEncrypted) {
-        const { data, salt } = JSON.parse(user.rsaPrivateKeyEncrypted);
+        const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
 
-        // Derive AES key from password and salt
-        const derivedKey = crypto.PBKDF2(form.password, salt, {
-          keySize: 256 / 32,
-          iterations: 1000,
-        }).toString();
+        // Decode Base64 → string
+        let decryptedPrivateKey = atob(data);
+        decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n").trim();
 
-        // In your current backend, the private key is only Base64-encoded (not AES-encrypted)
-        // So we can directly decode it for now.
-let decryptedPrivateKey = atob(data);                  // decode Base64
-decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n").trim();
-
-       decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n");
-        // ✅ Step 2: Save keys to localStorage
         localStorage.setItem("privateKey", decryptedPrivateKey);
         localStorage.setItem("publicKey", user.rsaPublicKey);
       }
