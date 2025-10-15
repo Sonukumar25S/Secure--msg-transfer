@@ -24,24 +24,34 @@ export default function Login({ onLogin }) {
         const { data } = JSON.parse(user.rsaPrivateKeyEncrypted);
 
         // Decode Base64 → string
-        let decryptedPrivateKey = atob(data);
+        let privateKey = atob(data);
 
-        // Replace escaped \n with real newlines
-        decryptedPrivateKey = decryptedPrivateKey.replace(/\\n/g, "\n").trim();
+        // Fix line breaks if necessary
+        if (!privateKey.includes("-----BEGIN RSA PRIVATE KEY-----")) {
+          privateKey = privateKey.replace(/\\n/g, "\n");
+        }
 
-        // Save to localStorage
-        localStorage.setItem("privateKey", decryptedPrivateKey);
+        privateKey = privateKey.trim();
+
+        // ✅ Step 2: Save keys to localStorage
+        localStorage.setItem("privateKey", privateKey);
         localStorage.setItem("publicKey", user.rsaPublicKey);
 
-        // Debug logs
-        console.log("✅ Private key valid start:", decryptedPrivateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----"));
-        console.log("✅ Private key valid end:", decryptedPrivateKey.endsWith("-----END RSA PRIVATE KEY-----"));
+        // 🔹 Optional: Verify immediately
+        console.log(
+          "Private key valid start:",
+          privateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----")
+        );
+        console.log(
+          "Private key valid end:",
+          privateKey.endsWith("-----END RSA PRIVATE KEY-----")
+        );
       }
 
       onLogin(user);
       navigate("/inbox");
     } catch (e) {
-      console.error(e);
+      console.error("Login error:", e);
       setErr(e?.response?.data?.message || "Login failed.");
     }
   }

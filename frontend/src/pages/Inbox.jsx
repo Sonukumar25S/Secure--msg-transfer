@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../api/api";
-import { JSEncrypt } from "jsencrypt";
+import  { JSEncrypt }from  "jsencrypt";
 import { aesDecryptBase64WithKeyHex } from "../utils/cryptoClient";
 
 export default function Inbox({ user }) {
@@ -27,21 +27,25 @@ export default function Inbox({ user }) {
 
   async function handleView(msg) {
     try {
-      let privateKey = localStorage.getItem("privateKey");
-      if (!privateKey) throw new Error("Private key not found");
+      
+      const privateKey = localStorage.getItem("privateKey")?.trim();
+if (!privateKey) throw new Error("Private key missing");
 
-      // Normalize escaped \n → real newlines
-      privateKey = privateKey.replace(/\\n/g, "\n").trim();
+const encryptedAESKey = msg.encryptedAESKey?.trim();
+if (!encryptedAESKey) throw new Error("No AES key");
 
-      const jse = new JSEncrypt();
-      jse.setPrivateKey(privateKey);
+const jse = new JSEncrypt();
+jse.setPrivateKey(privateKey);
 
-      const encryptedAESKey = msg.encryptedAESKey?.trim();
-      if (!encryptedAESKey) throw new Error("No AES key found");
+const aesKeyHex = jse.decrypt(encryptedAESKey);
+if (!aesKeyHex) {
+    console.error("Private key:", privateKey);
+    console.error("Encrypted AES key:", encryptedAESKey);
+    throw new Error("AES key decryption failed");
+}
 
-      const aesKeyHex = jse.decrypt(encryptedAESKey);
-      if (!aesKeyHex) throw new Error("Failed to decrypt AES key");
 
+    
       const payloadObj = JSON.parse(msg.payload);
       const decryptedText = await aesDecryptBase64WithKeyHex(payloadObj, aesKeyHex);
 
